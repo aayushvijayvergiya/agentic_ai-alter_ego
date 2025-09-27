@@ -1,0 +1,26 @@
+# Placeholder for LinkedIn PDF
+
+Since this is a sample deployment, the actual LinkedIn PDF is not included for privacy reasons.
+
+This file serves as a placeholder. In a real deployment, you would:
+
+1. Add your actual LinkedIn profile PDF here
+2. Or remove the PDF processing and use only the summary.txt file
+3. Or fetch LinkedIn data via API
+
+For demonstration purposes, the application will fall back to using the summary.txt content.
+
+Key LinkedIn Profile Information (Sample):
+- Name: Aayush Vijayvergiya
+- Title: AI Engineer & Software Developer
+- Experience: 5+ years in software development
+- Education: Computer Science background
+- Specializations: AI/ML, Full-stack development, Cloud computing
+
+Skills:
+- Python, JavaScript, TypeScript
+- Machine Learning frameworks
+- Web development frameworks
+- Cloud platforms and services
+- Database management
+- DevOps and deployment

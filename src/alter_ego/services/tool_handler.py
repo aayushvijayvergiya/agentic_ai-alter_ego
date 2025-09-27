@@ -1,0 +1,74 @@
+"""Tool handlers for processing OpenAI function calls."""
+
+import json
+from typing import Dict, Any, List
+
+from ..models import UserDetails, UnknownQuestion, ToolResult
+from ..services.notification_service import NotificationService
+
+
+class ToolHandler:
+    """Handler for processing tool calls from OpenAI."""
+    
+    def __init__(self):
+        self.notification_service = NotificationService()
+    
+    def record_user_details(self, email: str, name: str = "Name not provided", notes: str = "not provided") -> Dict[str, str]:
+        """Record user contact details and send notification."""
+        user_details = UserDetails(email=email, name=name, notes=notes)
+        
+        # Send notification
+        self.notification_service.notify_user_interest(
+            email=user_details.email,
+            name=user_details.name,
+            notes=user_details.notes
+        )
+        
+        return {"recorded": "ok"}
+    
+    def record_unknown_question(self, question: str) -> Dict[str, str]:
+        """Record an unknown question and send notification."""
+        unknown_question = UnknownQuestion(question=question)
+        
+        # Send notification
+        self.notification_service.notify_unknown_question(unknown_question.question)
+        
+        return {"recorded": "ok"}
+    
+    def handle_tool_calls(self, tool_calls) -> List[Dict[str, Any]]:
+        """Process multiple tool calls and return results."""
+        results = []
+        
+        for tool_call in tool_calls:
+            tool_name = tool_call.function.name
+            arguments = json.loads(tool_call.function.arguments)
+            
+            print(f"Tool called: {tool_name}", flush=True)
+            
+            # Get the appropriate handler method
+            handler_method = getattr(self, tool_name, None)
+            
+            if handler_method:
+                try:
+                    result = handler_method(**arguments)
+                except Exception as e:
+                    print(f"Error executing tool {tool_name}: {e}")
+                    result = {"error": f"Tool execution failed: {str(e)}"}
+            else:
+                print(f"Unknown tool: {tool_name}")
+                result = {"error": f"Unknown tool: {tool_name}"}
+            
+            # Create tool result
+            tool_result = ToolResult(
+                role="tool",
+                content=json.dumps(result),
+                tool_call_id=tool_call.id
+            )
+            
+            results.append({
+                "role": tool_result.role,
+                "content": tool_result.content,
+                "tool_call_id": tool_result.tool_call_id
+            })
+        
+        return results
