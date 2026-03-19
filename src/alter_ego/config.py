@@ -1,12 +1,4 @@
-"""Configuration module         # File paths - handle both local and deployment environments
-        if os.getenv("SPACE_ID"):  # Running on Hugging Face Spaces
-            self.project_root = Path("/home/user/app")
-        else:  # Local development
-            self.project_root = Path(__file__).parent.parent.parent.parent
-        
-        self.static_dir = self.project_root / "static"
-        self.linkedin_pdf_path = self.static_dir / "AayushVijayvergiya_LinkedIn.pdf"
-        self.summary_file_path = self.static_dir / "summary.txt"he Alter Ego application."""
+"""Configuration module for the Alter Ego application."""
 
 import os
 from pathlib import Path
@@ -49,23 +41,9 @@ class Config:
     
     def validate_config(self) -> bool:
         """Validate required configuration values."""
-        required_configs = [
-            ("OPENAI_API_KEY", self.openai_api_key),
-            ("PUSHOVER_USER", self.pushover_user),
-            ("PUSHOVER_TOKEN", self.pushover_token),
-            ("LINKEDIN_PDF_PATH", self.linkedin_pdf_path),
-            ("SUMMARY_FILE_PATH", self.summary_file_path)
-        ]
-        
-        missing_configs = []
-        for config_name, config_value in required_configs:
-            if not config_value:
-                missing_configs.append(config_name)
-        
-        if missing_configs:
-            print(f"Missing required configuration: {', '.join(missing_configs)}")
+        if not self.openai_api_key:
+            print("Missing required configuration: OPENAI_API_KEY")
             return False
-        
         return True
     
     
