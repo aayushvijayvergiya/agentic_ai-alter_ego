@@ -7,17 +7,19 @@ from openai import OpenAI
 from ..config import config
 from ..tools import AVAILABLE_TOOLS
 from ..services.document_service import DocumentService
+from ..services.github_service import GitHubService
 from ..services.tool_handler import ToolHandler
 
 
 class ChatService:
     """Service for handling chat conversations with OpenAI."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.openai_client = OpenAI()
         self.document_service = DocumentService()
+        self.github_service = GitHubService()
         self.tool_handler = ToolHandler()
-        self._system_prompt = None
+        self._system_prompt: str | None = None
     
     @property
     def system_prompt(self) -> str:
@@ -31,6 +33,7 @@ class ChatService:
         linkedin_content = self.document_service.get_linkedin_content()
         summary_content = self.document_service.get_summary_content()
         portfolio_content = self.document_service.get_portfolio_content()
+        github_content = self.github_service.get_github_content()
 
         prompt = f"""You are acting as {config.name}. You are answering questions on {config.name}'s website, \
 particularly questions related to {config.name}'s career, background, skills and experience. \
@@ -48,6 +51,9 @@ If the user is engaging in discussion, try to steer them towards getting in touc
 
 ## Portfolio:
 {portfolio_content}
+
+## GitHub:
+{github_content}
 
 With this context, please chat with the user, always staying in character as {config.name}."""
         

@@ -24,7 +24,7 @@ class Config:
         self.project_root = Path(__file__).parent.parent.parent
         self.static_dir = self.project_root / "static"
         self.linkedin_pdf_path = self.static_dir / "AayushVijayvergiya_LinkedIn.pdf"
-        self.summary_file_path = self.static_dir / "summary.txt"
+        self.summary_file_path = self.static_dir / "summary.md"
         
         # Pushover API settings
         self.pushover_url = "https://api.pushover.net/1/messages.json"
@@ -37,6 +37,11 @@ class Config:
         self.user_agent = os.getenv("USER_AGENT", 
                                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
         self.request_timeout = int(os.getenv("REQUEST_TIMEOUT", "10"))
+
+        # GitHub configuration
+        self.github_username = os.getenv("GITHUB_USERNAME", "aayushvijayvergiya")
+        self.github_token: Optional[str] = os.getenv("GITHUB_TOKEN")
+        self.github_cache_duration = int(os.getenv("GITHUB_CACHE_DURATION", "3600"))
         
     
     def validate_config(self) -> bool:

@@ -30,19 +30,21 @@ src/alter_ego/
   services/
     chat_service.py        # ChatService — orchestrates OpenAI calls + tool-call loop
     document_service.py    # DocumentService — PDF, text, and portfolio web scraping with caching
+    github_service.py      # GitHubService — GitHub profile + top repos via REST API with caching
     notification_service.py# NotificationService — Pushover push notifications
     tool_handler.py        # ToolHandler — dispatches OpenAI tool calls to Python methods
 static/
   AayushVijayvergiya_LinkedIn.pdf  # Loaded at startup as chatbot context
   summary.txt                      # Loaded at startup as chatbot context
   portfolio_cache.json             # Auto-generated cache for portfolio website scraping
+  github_cache.json                # Auto-generated cache for GitHub API data
 tests/
   test_alter_ego.py        # pytest tests using unittest.mock
 ```
 
 ### Data flow
 1. Gradio → `AlterEgoApp.chat_handler()` → `ChatService.chat()`
-2. `ChatService` builds a system prompt from `DocumentService` (PDF + text + portfolio) on first call (cached)
+2. `ChatService` builds a system prompt from `DocumentService` (PDF + text + portfolio) and `GitHubService` (profile + repos) on first call (all cached)
 3. Calls OpenAI with `AVAILABLE_TOOLS`; if `finish_reason == "tool_calls"`, passes to `ToolHandler`
 4. `ToolHandler` dispatches by tool name (method name must match tool name in `tools.py`)
 5. Tool results (`record_user_details`, `record_unknown_question`) trigger Pushover notifications via `NotificationService`
@@ -80,6 +82,9 @@ All data models are Python `@dataclass` (not Pydantic). They live in `src/alter_
 | `PUSHOVER_TOKEN` | No | Pushover API token |
 | `PORTFOLIO_URL` | No | Portfolio website URL to scrape for additional context |
 | `PORTFOLIO_CACHE_DURATION` | No | Cache TTL in seconds (default: 3600) |
+| `GITHUB_USERNAME` | No | GitHub username to fetch repos from (default: `aayushvijayvergiya`) |
+| `GITHUB_TOKEN` | No | GitHub PAT — raises rate limit from 60 to 5000 req/hr |
+| `GITHUB_CACHE_DURATION` | No | GitHub data cache TTL in seconds (default: 3600) |
 | `REQUEST_TIMEOUT` | No | HTTP timeout for web scraping (default: 10) |
 
 Copy `.env.example` to `.env` for local development.

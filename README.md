@@ -47,7 +47,7 @@ alter_ego_01/
 │   └── test_alter_ego.py    # Application tests
 ├── static/                  # Static files
 │   ├── AayushVijayvergiya_LinkedIn.pdf
-│   └── summary.txt
+│   └── summary.md
 ├── main.py                  # Entry point
 ├── pyproject.toml          # Project configuration
 └── README.md               # This file
@@ -76,7 +76,7 @@ alter_ego_01/
 
 4. **Add your documents**:
    - Place LinkedIn PDF in `static/`
-   - Add summary text in `static/summary.txt`
+   - Add summary text in `static/summary.md`
 
 ## Usage
 

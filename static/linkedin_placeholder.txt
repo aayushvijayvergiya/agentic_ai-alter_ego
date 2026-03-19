@@ -5,10 +5,10 @@ Since this is a sample deployment, the actual LinkedIn PDF is not included for p
 This file serves as a placeholder. In a real deployment, you would:
 
 1. Add your actual LinkedIn profile PDF here
-2. Or remove the PDF processing and use only the summary.txt file
+2. Or remove the PDF processing and use only the summary.md file
 3. Or fetch LinkedIn data via API
 
-For demonstration purposes, the application will fall back to using the summary.txt content.
+For demonstration purposes, the application will fall back to using the summary.md content.
 
 Key LinkedIn Profile Information (Sample):
 - Name: Aayush Vijayvergiya

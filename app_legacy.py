@@ -77,7 +77,7 @@ for page in reader.pages:
     if text:
         linkedin += text
 
-with open("static/summary.txt", "r", encoding="utf-8") as f:
+with open("static/summary.md", "r", encoding="utf-8") as f:
     summary = f.read()
 
 name = "Aayush Vijayvergiya"

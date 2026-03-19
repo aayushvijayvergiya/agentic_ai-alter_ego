@@ -13,7 +13,7 @@ def check_files():
         "requirements.txt", 
         "README.md",
         "src/alter_ego/__init__.py",
-        "static/summary.txt"
+        "static/summary.md"
     ]
     
     missing_files = []
