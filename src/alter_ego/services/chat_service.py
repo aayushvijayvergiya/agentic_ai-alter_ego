@@ -15,7 +15,15 @@ class ChatService:
     """Service for handling chat conversations with OpenAI."""
     
     def __init__(self) -> None:
-        self.openai_client = OpenAI()
+        if config.use_openrouter:
+            self.openai_client = OpenAI(
+                base_url=config.openrouter_base_url,
+                api_key=config.active_api_key,
+            )
+            print(f"Using OpenRouter API with model: {config.model_name}")
+        else:
+            self.openai_client = OpenAI(api_key=config.active_api_key)
+            print(f"Using OpenAI API with model: {config.model_name}")
         self.document_service = DocumentService()
         self.github_service = GitHubService()
         self.tool_handler = ToolHandler()

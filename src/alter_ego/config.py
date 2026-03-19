@@ -13,12 +13,14 @@ class Config:
     def __init__(self):
         # API Keys
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
+        self.openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
         self.pushover_user = os.getenv("PUSHOVER_USER")
         self.pushover_token = os.getenv("PUSHOVER_TOKEN")
-        
+
         # Application settings
         self.name = "Aayush Vijayvergiya"
-        self.model_name = "gpt-4o-mini"
+        self.model_name = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:free")
+        self.openrouter_base_url = "https://openrouter.ai/api/v1"
         
         # File paths
         self.project_root = Path(__file__).parent.parent.parent
@@ -46,10 +48,20 @@ class Config:
     
     def validate_config(self) -> bool:
         """Validate required configuration values."""
-        if not self.openai_api_key:
-            print("Missing required configuration: OPENAI_API_KEY")
+        if not self.openrouter_api_key and not self.openai_api_key:
+            print("Missing required configuration: OPENROUTER_API_KEY (or OPENAI_API_KEY)")
             return False
         return True
+
+    @property
+    def active_api_key(self) -> Optional[str]:
+        """Return the active API key — OpenRouter takes priority."""
+        return self.openrouter_api_key or self.openai_api_key
+
+    @property
+    def use_openrouter(self) -> bool:
+        """Return True if OpenRouter is configured."""
+        return bool(self.openrouter_api_key)
     
     
     @property

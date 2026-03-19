@@ -18,8 +18,29 @@ class TestConfig:
         """Test that config initializes properly."""
         config = Config()
         assert config.name == "Aayush Vijayvergiya"
-        assert config.model_name == "gpt-4o-mini"
-    
+        assert config.model_name  # model_name is set (env-configurable)
+        assert config.openrouter_base_url == "https://openrouter.ai/api/v1"
+
+    def test_openrouter_takes_priority(self):
+        """Test that OpenRouter key takes priority over OpenAI key."""
+        with patch.dict('os.environ', {'OPENROUTER_API_KEY': 'or-key', 'OPENAI_API_KEY': 'oai-key'}):
+            config = Config()
+            assert config.use_openrouter is True
+            assert config.active_api_key == 'or-key'
+
+    def test_openai_fallback_when_no_openrouter(self):
+        """Test that OpenAI key is used when OpenRouter is not set."""
+        with patch.dict('os.environ', {'OPENAI_API_KEY': 'oai-key'}, clear=True):
+            config = Config()
+            assert config.use_openrouter is False
+            assert config.active_api_key == 'oai-key'
+
+    def test_validate_config_fails_when_no_keys(self):
+        """Test that validate_config returns False when neither API key is set."""
+        with patch.dict('os.environ', {}, clear=True):
+            config = Config()
+            assert config.validate_config() is False
+
     def test_pushover_config_detection(self):
         """Test pushover configuration detection."""
         with patch.dict('os.environ', {'PUSHOVER_USER': 'test', 'PUSHOVER_TOKEN': 'test'}):
