@@ -3,6 +3,7 @@
 from typing import List, Dict, Any
 
 from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
 
 from ..config import config
 from ..tools import AVAILABLE_TOOLS
@@ -80,37 +81,44 @@ You now have everything you need. Greet the visitor warmly and start the convers
     def chat(self, message: str, history: List[Dict[str, str]]) -> str:
         """Process a chat message and return the response."""
         # Prepare messages for OpenAI
-        messages = [{"role": "system", "content": self.system_prompt}] + history + [{"role": "user", "content": message}]
+        messages: List[ChatCompletionMessageParam] = (
+            [{"role": "system", "content": self.system_prompt}]
+            + [{"role": m["role"], "content": m["content"]} for m in history]  # type: ignore[misc]
+            + [{"role": "user", "content": message}]
+        )
         
         done = False
-        
+        response = None
+
         while not done:
             try:
                 # Call OpenAI API with tools
                 response = self.openai_client.chat.completions.create(
                     model=config.model_name,
                     messages=messages,
-                    tools=AVAILABLE_TOOLS
+                    tools=AVAILABLE_TOOLS,  # type: ignore[arg-type]
                 )
-                
+
                 finish_reason = response.choices[0].finish_reason
-                
+
                 # Handle tool calls if present
                 if finish_reason == "tool_calls":
                     message_obj = response.choices[0].message
                     tool_calls = message_obj.tool_calls
-                    
+
                     # Process tool calls
                     tool_results = self.tool_handler.handle_tool_calls(tool_calls)
-                    
+
                     # Add assistant message and tool results to conversation
-                    messages.append(message_obj)
-                    messages.extend(tool_results)
+                    messages.append(message_obj.model_dump())  # type: ignore[arg-type]
+                    messages.extend(tool_results)  # type: ignore[arg-type]
                 else:
                     done = True
-                    
+
             except Exception as e:
                 print(f"Error in chat processing: {e}")
-                return f"I'm sorry, I encountered an error while processing your message. Please try again."
-        
-        return response.choices[0].message.content
+                return "I'm sorry, I encountered an error while processing your message. Please try again."
+
+        if response is None:
+            return "I'm sorry, I wasn't able to generate a response. Please try again."
+        return response.choices[0].message.content or ""

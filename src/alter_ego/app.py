@@ -30,8 +30,8 @@ class AlterEgoApp:
         interface = gr.ChatInterface(
             self.chat_handler,
             type="messages",
-            title=f"Chat with {config.name}",
-            description=f"Ask me about {config.name}'s background, skills, and experience!"
+            title="Aayush's Digital Twin 🤖",
+            description="Powered by open-source models, so responses might take a sec — appreciate your patience! Ask me anything about Aayush's background, skills, and experience."
         )
         
         return interface.launch(**kwargs)
