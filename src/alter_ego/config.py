@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Optional
 from dotenv import load_dotenv
 
+from .utils.logger import logger
+
 load_dotenv()
 
 class Config:
@@ -16,6 +18,13 @@ class Config:
         self.openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
         self.pushover_user = os.getenv("PUSHOVER_USER")
         self.pushover_token = os.getenv("PUSHOVER_TOKEN")
+
+        # SMTP Configuration
+        self.smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
+        self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
+        self.smtp_user = os.getenv("SMTP_USER")
+        self.smtp_password = os.getenv("SMTP_PASSWORD")
+        self.notification_email = os.getenv("NOTIFICATION_EMAIL")
 
         # Application settings
         self.name = "Aayush Vijayvergiya"
@@ -49,7 +58,7 @@ class Config:
     def validate_config(self) -> bool:
         """Validate required configuration values."""
         if not self.openrouter_api_key and not self.openai_api_key:
-            print("Missing required configuration: OPENROUTER_API_KEY (or OPENAI_API_KEY)")
+            logger.error("Missing required configuration: OPENROUTER_API_KEY (or OPENAI_API_KEY)")
             return False
         return True
 
@@ -73,5 +82,10 @@ class Config:
     def has_pushover_config(self) -> bool:
         """Check if Pushover configuration is available."""
         return bool(self.pushover_user and self.pushover_token)
+
+    @property
+    def has_smtp_config(self) -> bool:
+        """Check if SMTP configuration is available."""
+        return bool(self.smtp_host and self.smtp_port and self.smtp_user and self.smtp_password and self.notification_email)
 
 config = Config()

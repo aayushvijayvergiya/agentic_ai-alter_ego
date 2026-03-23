@@ -1,8 +1,8 @@
-"""Chat service for handling conversations with OpenAI."""
+"""Chat service for handling conversations with OpenAI asynchronously."""
 
 from typing import List, Dict, Any
 
-from openai import OpenAI
+from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
 from ..config import config
@@ -10,39 +10,42 @@ from ..tools import AVAILABLE_TOOLS
 from ..services.document_service import DocumentService
 from ..services.github_service import GitHubService
 from ..services.tool_handler import ToolHandler
+from ..utils.logger import logger
 
 
 class ChatService:
-    """Service for handling chat conversations with OpenAI."""
+    """Service for handling chat conversations with OpenAI asynchronously."""
+    
+    MAX_TOOL_CALLS = 5
     
     def __init__(self) -> None:
         if config.use_openrouter:
-            self.openai_client = OpenAI(
+            self.openai_client = AsyncOpenAI(
                 base_url=config.openrouter_base_url,
                 api_key=config.active_api_key,
             )
-            print(f"Using OpenRouter API with model: {config.model_name}")
+            logger.info(f"Using OpenRouter API with model: {config.model_name}")
         else:
-            self.openai_client = OpenAI(api_key=config.active_api_key)
-            print(f"Using OpenAI API with model: {config.model_name}")
+            self.openai_client = AsyncOpenAI(api_key=config.active_api_key)
+            logger.info(f"Using OpenAI API with model: {config.model_name}")
+            
         self.document_service = DocumentService()
         self.github_service = GitHubService()
         self.tool_handler = ToolHandler()
         self._system_prompt: str | None = None
     
-    @property
-    def system_prompt(self) -> str:
-        """Generate and cache the system prompt."""
+    async def get_system_prompt(self) -> str:
+        """Generate and cache the system prompt asynchronously."""
         if self._system_prompt is None:
-            self._system_prompt = self._build_system_prompt()
+            self._system_prompt = await self._build_system_prompt()
         return self._system_prompt
     
-    def _build_system_prompt(self) -> str:
-        """Build the system prompt with context information."""
-        linkedin_content = self.document_service.get_linkedin_content()
-        summary_content = self.document_service.get_summary_content()
-        portfolio_content = self.document_service.get_portfolio_content()
-        github_content = self.github_service.get_github_content()
+    async def _build_system_prompt(self) -> str:
+        """Build the system prompt with context information asynchronously."""
+        linkedin_content = await self.document_service.get_linkedin_content()
+        summary_content = await self.document_service.get_summary_content()
+        portfolio_content = await self.document_service.get_portfolio_content()
+        github_content = await self.github_service.get_github_content()
 
         prompt = f"""You are {config.name}'s AI alter ego, embedded on his personal portfolio website. \
 Visitors are typically potential employers, clients, collaborators, or fellow engineers who want to learn about {config.name}.
@@ -78,22 +81,24 @@ You now have everything you need. Greet the visitor warmly and start the convers
 
         return prompt
     
-    def chat(self, message: str, history: List[Dict[str, str]]) -> str:
-        """Process a chat message and return the response."""
+    async def chat(self, message: str, history: List[Dict[str, str]]) -> str:
+        """Process a chat message and return the response asynchronously."""
         # Prepare messages for OpenAI
+        system_prompt = await self.get_system_prompt()
         messages: List[ChatCompletionMessageParam] = (
-            [{"role": "system", "content": self.system_prompt}]
+            [{"role": "system", "content": system_prompt}]
             + [{"role": m["role"], "content": m["content"]} for m in history]  # type: ignore[misc]
             + [{"role": "user", "content": message}]
         )
         
         done = False
         response = None
+        tool_call_count = 0
 
         while not done:
             try:
                 # Call OpenAI API with tools
-                response = self.openai_client.chat.completions.create(
+                response = await self.openai_client.chat.completions.create(
                     model=config.model_name,
                     messages=messages,
                     tools=AVAILABLE_TOOLS,  # type: ignore[arg-type]
@@ -103,11 +108,17 @@ You now have everything you need. Greet the visitor warmly and start the convers
 
                 # Handle tool calls if present
                 if finish_reason == "tool_calls":
+                    tool_call_count += 1
+                    if tool_call_count > self.MAX_TOOL_CALLS:
+                        logger.warning(f"Exceeded maximum tool calls ({self.MAX_TOOL_CALLS})")
+                        done = True
+                        continue
+                        
                     message_obj = response.choices[0].message
                     tool_calls = message_obj.tool_calls
 
                     # Process tool calls
-                    tool_results = self.tool_handler.handle_tool_calls(tool_calls)
+                    tool_results = await self.tool_handler.handle_tool_calls(tool_calls)
 
                     # Add assistant message and tool results to conversation
                     messages.append(message_obj.model_dump())  # type: ignore[arg-type]
@@ -116,7 +127,7 @@ You now have everything you need. Greet the visitor warmly and start the convers
                     done = True
 
             except Exception as e:
-                print(f"Error in chat processing: {e}")
+                logger.error(f"Error in chat processing: {e}")
                 return "I'm sorry, I encountered an error while processing your message. Please try again."
 
         if response is None:

@@ -4,6 +4,7 @@ import gradio as gr
 
 from .config import config
 from .services import ChatService
+from .utils.logger import logger
 
 
 class AlterEgoApp:
@@ -15,14 +16,14 @@ class AlterEgoApp:
             raise ValueError("Invalid configuration. Please check your environment variables.")
         
         self.chat_service = ChatService()
-        print(f"Alter Ego application initialized for {config.name}")
+        logger.info(f"Alter Ego application initialized for {config.name}")
     
-    def chat_handler(self, message: str, history) -> str:
-        """Handle chat messages from Gradio interface."""
+    async def chat_handler(self, message: str, history) -> str:
+        """Handle chat messages from Gradio interface asynchronously."""
         try:
-            return self.chat_service.chat(message, history)
+            return await self.chat_service.chat(message, history)
         except Exception as e:
-            print(f"Error in chat handler: {e}")
+            logger.error(f"Error in chat handler: {e}")
             return "I'm sorry, I encountered an error. Please try again."
     
     def launch(self, **kwargs):
