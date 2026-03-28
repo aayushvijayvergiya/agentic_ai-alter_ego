@@ -30,6 +30,8 @@ class Config:
         self.name = "Aayush Vijayvergiya"
         self.model_name = os.getenv("MODEL_NAME", "openai/gpt-oss-120b:free")
         self.openrouter_base_url = "https://openrouter.ai/api/v1"
+        self.portfolio_domain = os.getenv("PORTFOLIO_DOMAIN")
+        self.max_messages_per_session = int(os.getenv("MAX_MESSAGES_PER_SESSION", "20"))
         
         # File paths
         self.project_root = Path(__file__).parent.parent.parent

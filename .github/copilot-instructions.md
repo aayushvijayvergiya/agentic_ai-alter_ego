@@ -78,7 +78,14 @@ All data models are Python `@dataclass` (not Pydantic). They live in `src/alter_
 | Variable | Required | Description |
 |---|---|---|
 | `OPENAI_API_KEY` | Yes | OpenAI API key |
-| `PUSHOVER_USER` | No | Pushover user key for notifications |
+| `OPENROUTER_API_KEY` | No | OpenRouter API key (takes priority over OpenAI if set) |
+| `MODEL_NAME` | No | Model slug (default: `openai/gpt-oss-120b:free`) |
+| `SMTP_HOST` | No | SMTP server for email notifications (default: `smtp.gmail.com`) |
+| `SMTP_PORT` | No | SMTP port (default: `587`) |
+| `SMTP_USER` | No | SMTP username / email |
+| `SMTP_PASSWORD` | No | SMTP password / app password |
+| `NOTIFICATION_EMAIL` | No | Recipient email for unknown questions/contact info |
+| `PUSHOVER_USER` | No | Pushover user key for push notifications |
 | `PUSHOVER_TOKEN` | No | Pushover API token |
 | `PORTFOLIO_URL` | No | Portfolio website URL to scrape for additional context |
 | `PORTFOLIO_CACHE_DURATION` | No | Cache TTL in seconds (default: 3600) |
@@ -86,6 +93,8 @@ All data models are Python `@dataclass` (not Pydantic). They live in `src/alter_
 | `GITHUB_TOKEN` | No | GitHub PAT — raises rate limit from 60 to 5000 req/hr |
 | `GITHUB_CACHE_DURATION` | No | GitHub data cache TTL in seconds (default: 3600) |
 | `REQUEST_TIMEOUT` | No | HTTP timeout for web scraping (default: 10) |
+| `PORTFOLIO_DOMAIN` | No | Allowed iframe origin for embedding (e.g. `https://your-portfolio.com`) |
+| `MAX_MESSAGES_PER_SESSION` | No | Soft-block limit after N user messages (default: 20) |
 
 Copy `.env.example` to `.env` for local development.
 
@@ -110,10 +119,10 @@ Copy `.env.example` to `.env` for local development.
 - One-liner for simple methods; multi-line with blank line after summary for complex ones
 - Private helper methods (`_`) may use one-line docstrings
 
-### Error Handling
+### Error Handling & Logging
 - Never use bare `except:` — always catch specific exception types (e.g., `except requests.RequestException`, `except json.JSONDecodeError`)
 - All I/O operations (file reads, HTTP requests, PDF parsing) must have try/except with a graceful fallback — the app must never crash due to a missing file or failed network call
-- Log errors with `print(f"Error description: {e}")` — do not silently swallow exceptions
+- Log errors using the standard logger: `logger.error(f"Error description: {e}")` — do not use `print()` or silently swallow exceptions.
 
 ### Project-Specific Rules
 - **All env vars must be accessed through `config`** — never call `os.getenv()` outside of `config.py`

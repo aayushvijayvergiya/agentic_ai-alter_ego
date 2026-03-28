@@ -81,8 +81,8 @@ You now have everything you need. Greet the visitor warmly and start the convers
 
         return prompt
     
-    async def chat(self, message: str, history: List[Dict[str, str]]) -> str:
-        """Process a chat message and return the response asynchronously."""
+    async def chat(self, message: str, history: List[Dict[str, str]]) -> Any:
+        """Process a chat message and return the response asynchronously as a generator."""
         # Prepare messages for OpenAI
         system_prompt = await self.get_system_prompt()
         messages: List[ChatCompletionMessageParam] = (
@@ -91,30 +91,29 @@ You now have everything you need. Greet the visitor warmly and start the convers
             + [{"role": "user", "content": message}]
         )
         
-        done = False
-        response = None
         tool_call_count = 0
 
-        while not done:
+        # Pass 1 & Tool Loop: Non-streaming to handle tools
+        while True:
             try:
-                # Call OpenAI API with tools
+                # Call OpenAI API with tools (non-streaming)
                 response = await self.openai_client.chat.completions.create(
                     model=config.model_name,
                     messages=messages,
                     tools=AVAILABLE_TOOLS,  # type: ignore[arg-type]
                 )
 
+                message_obj = response.choices[0].message
                 finish_reason = response.choices[0].finish_reason
 
                 # Handle tool calls if present
-                if finish_reason == "tool_calls":
+                if finish_reason == "tool_calls" or (hasattr(message_obj, 'tool_calls') and message_obj.tool_calls):
                     tool_call_count += 1
                     if tool_call_count > self.MAX_TOOL_CALLS:
                         logger.warning(f"Exceeded maximum tool calls ({self.MAX_TOOL_CALLS})")
-                        done = True
-                        continue
+                        yield "I'm sorry, I encountered an error while processing your message. Please try again."
+                        return
                         
-                    message_obj = response.choices[0].message
                     tool_calls = message_obj.tool_calls
 
                     # Process tool calls
@@ -124,12 +123,31 @@ You now have everything you need. Greet the visitor warmly and start the convers
                     messages.append(message_obj.model_dump())  # type: ignore[arg-type]
                     messages.extend(tool_results)  # type: ignore[arg-type]
                 else:
-                    done = True
+                    # No more tool calls needed. Break to start the streaming pass.
+                    # Note: We intentionally discard the text generated in this non-streaming pass
+                    # to fulfill the streaming requirement for the final response.
+                    break
 
             except Exception as e:
-                logger.error(f"Error in chat processing: {e}")
-                return "I'm sorry, I encountered an error while processing your message. Please try again."
+                logger.error(f"Error in chat processing (tool pass): {e}")
+                yield "I'm sorry, I encountered an error while processing your message. Please try again."
+                return
 
-        if response is None:
-            return "I'm sorry, I wasn't able to generate a response. Please try again."
-        return response.choices[0].message.content or ""
+        # Pass 2: Stream the final response
+        try:
+            stream = await self.openai_client.chat.completions.create(
+                model=config.model_name,
+                messages=messages,
+                stream=True
+            )
+            
+            full_response = ""
+            async for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    full_response += chunk.choices[0].delta.content
+                    yield full_response
+                    
+        except Exception as e:
+            logger.error(f"Error in chat streaming: {e}")
+            if not full_response:
+                yield "I'm sorry, I encountered an error while generating the response."
